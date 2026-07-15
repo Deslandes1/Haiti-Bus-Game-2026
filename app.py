@@ -464,6 +464,10 @@ GAME_HTML = """
                     countdown--;
                     document.getElementById('message-box').innerHTML = `🏁 GO! 🏁`;
                     raceRunning = true;
+                    // Start the engine sound when race actually starts
+                    startEngineSound();
+                    // Brief startup rev effect
+                    engineRev();
                     setTimeout(() => {
                         if (raceActive && !winner) {
                             document.getElementById('message-box').innerHTML = `🏁 Race in progress! Use arrows to drive.`;
@@ -506,6 +510,8 @@ GAME_HTML = """
             startBtn.style.opacity = '1';
             // reset speed display
             document.getElementById('speed-value').innerText = "0";
+            // stop engine sound
+            stopEngineSound();
         }
         
         // Start the race (called when start button clicked)
@@ -684,6 +690,7 @@ GAME_HTML = """
                 playFinishFanfare('bus');
                 createBalloons();
                 opponentSelect.disabled = false; // allow new selection after race
+                stopEngineSound();
             } else if (carZ >= FINISH_LINE_Z && winner === null) {
                 winner = 'car';
                 raceRunning = false;
@@ -692,6 +699,7 @@ GAME_HTML = """
                 playFinishFanfare('car');
                 createBalloons();
                 opponentSelect.disabled = false;
+                stopEngineSound();
             }
         }
         
@@ -746,28 +754,138 @@ GAME_HTML = """
         startBtn.addEventListener('click', startRace);
         resetBtn.addEventListener('click', resetRace);
         
-        let engineOsc = null, engineGain = null;
+        // --- NEW ENGINE SOUND (classic race car) ---
+        let engineCtx = null;
+        let engineNodes = null;
+        let engineStarted = false; // whether oscillators have been started (they can be started once)
+        let engineRunning = false; // whether sound is currently audible (gains > 0)
+        
+        // Initialize audio context and nodes (called once on first user interaction)
         function initEngineSound() {
-            if (engineOsc) return;
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            engineOsc = ctx.createOscillator();
-            engineGain = ctx.createGain();
-            engineOsc.type = 'sawtooth';
-            engineOsc.frequency.value = 60;
-            engineGain.gain.value = 0;
-            engineOsc.connect(engineGain);
-            engineGain.connect(ctx.destination);
-            engineOsc.start();
-            window.engineCtx = ctx;
+            if (engineCtx) return;
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            try {
+                engineCtx = new AudioCtx();
+            } catch(e) {
+                return;
+            }
+            // Master gain
+            const masterGain = engineCtx.createGain();
+            masterGain.gain.value = 0.5;
+            masterGain.connect(engineCtx.destination);
+            
+            // Oscillator 1: sawtooth for growl
+            const osc1 = engineCtx.createOscillator();
+            osc1.type = 'sawtooth';
+            osc1.frequency.value = 80;
+            const gain1 = engineCtx.createGain();
+            gain1.gain.value = 0;
+            osc1.connect(gain1);
+            gain1.connect(masterGain);
+            
+            // Oscillator 2: sine for bass rumble
+            const osc2 = engineCtx.createOscillator();
+            osc2.type = 'sine';
+            osc2.frequency.value = 45;
+            const gain2 = engineCtx.createGain();
+            gain2.gain.value = 0;
+            osc2.connect(gain2);
+            gain2.connect(masterGain);
+            
+            // Noise (white) for road / exhaust
+            const bufferSize = 4096;
+            const buffer = engineCtx.createBuffer(1, bufferSize, engineCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            const noise = engineCtx.createBufferSource();
+            noise.buffer = buffer;
+            noise.loop = true;
+            const noiseGain = engineCtx.createGain();
+            noiseGain.gain.value = 0;
+            const filter = engineCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 300;
+            noise.connect(filter);
+            filter.connect(noiseGain);
+            noiseGain.connect(masterGain);
+            
+            // Store nodes
+            engineNodes = {
+                masterGain,
+                osc1, gain1,
+                osc2, gain2,
+                noise, noiseGain, filter
+            };
+            // Start oscillators (they will run continuously but with zero gain)
+            osc1.start();
+            osc2.start();
+            noise.start();
+            engineStarted = true;
+            engineCtx.resume();
         }
+        
+        // Start the engine sound (set gains > 0)
+        function startEngineSound() {
+            if (!engineNodes) initEngineSound();
+            if (!engineNodes) return;
+            if (engineCtx.state === 'suspended') engineCtx.resume();
+            engineRunning = true;
+            // Gains will be updated via updateEngineSound based on speed
+        }
+        
+        // Brief startup rev effect (sweep up and down)
+        function engineRev() {
+            if (!engineNodes || !engineRunning) return;
+            const now = engineCtx.currentTime;
+            // Sweep osc1 frequency from 80 to 200 and back
+            engineNodes.osc1.frequency.setValueAtTime(80, now);
+            engineNodes.osc1.frequency.linearRampToValueAtTime(250, now + 0.3);
+            engineNodes.osc1.frequency.linearRampToValueAtTime(80, now + 0.6);
+            // Quick gain boost
+            engineNodes.gain1.gain.setValueAtTime(0.05, now);
+            engineNodes.gain1.gain.linearRampToValueAtTime(0.2, now + 0.15);
+            engineNodes.gain1.gain.linearRampToValueAtTime(0.05, now + 0.6);
+            engineNodes.gain2.gain.setValueAtTime(0.02, now);
+            engineNodes.gain2.gain.linearRampToValueAtTime(0.1, now + 0.2);
+            engineNodes.gain2.gain.linearRampToValueAtTime(0.02, now + 0.6);
+            engineNodes.noiseGain.gain.setValueAtTime(0.01, now);
+            engineNodes.noiseGain.gain.linearRampToValueAtTime(0.05, now + 0.2);
+            engineNodes.noiseGain.gain.linearRampToValueAtTime(0.01, now + 0.6);
+        }
+        
+        // Stop the engine sound (set gains to 0)
+        function stopEngineSound() {
+            if (!engineNodes) return;
+            engineRunning = false;
+            const now = engineCtx.currentTime;
+            engineNodes.gain1.gain.setValueAtTime(0, now);
+            engineNodes.gain2.gain.setValueAtTime(0, now);
+            engineNodes.noiseGain.gain.setValueAtTime(0, now);
+        }
+        
+        // Update engine parameters based on current speed
         function updateEngineSound(speed) {
-            if (!engineOsc || !window.engineCtx) return;
-            if (window.engineCtx.state === 'suspended') window.engineCtx.resume();
+            if (!engineNodes || !engineRunning) return;
             const absSpd = Math.abs(speed);
             const norm = Math.min(1, absSpd / MAX_SPEED);
-            engineOsc.frequency.value = 55 + norm * 140;
-            engineGain.gain.value = absSpd > 0.5 ? 0.1 + norm * 0.2 : 0;
+            // osc1: 80 - 350 Hz
+            engineNodes.osc1.frequency.value = 80 + norm * 270;
+            // osc2: 45 - 180 Hz
+            engineNodes.osc2.frequency.value = 45 + norm * 135;
+            // filter frequency for noise: 200 - 800 Hz
+            engineNodes.filter.frequency.value = 200 + norm * 600;
+            // Gains: increase with speed
+            const g1 = 0.02 + norm * 0.25;
+            const g2 = 0.01 + norm * 0.12;
+            const gNoise = 0.005 + norm * 0.08;
+            engineNodes.gain1.gain.value = g1;
+            engineNodes.gain2.gain.value = g2;
+            engineNodes.noiseGain.gain.value = gNoise;
         }
+        
+        // --- End of engine sound code ---
+        
+        // We'll call updateEngineSound from the main loop instead of the old one.
         
         function updateCamera() {
             const targetX = busLateral * 0.3;
@@ -788,6 +906,7 @@ GAME_HTML = """
                 updateAI(dt);
                 checkCollisions();
                 checkFinish();
+                // Update engine sound with current bus speed
                 updateEngineSound(busSpeed);
                 speedSpan.innerText = Math.floor(Math.abs(busSpeed) * 3.6);
             }
@@ -799,9 +918,10 @@ GAME_HTML = """
             requestAnimationFrame(animate);
         }
         
+        // Initialize audio on first keypress
         window.addEventListener('keydown', () => {
-            if (!engineOsc) initEngineSound();
-            if (window.engineCtx && window.engineCtx.state === 'suspended') window.engineCtx.resume();
+            if (!engineCtx) initEngineSound();
+            if (engineCtx && engineCtx.state === 'suspended') engineCtx.resume();
         });
         
         fullReset(); // initial pre-start state
@@ -816,7 +936,6 @@ GAME_HTML = """
     </script>
 </body>
 </html>
-
 """
 
 components.html(GAME_HTML, height=900, scrolling=False)
