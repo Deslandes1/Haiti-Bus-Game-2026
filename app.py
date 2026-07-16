@@ -327,105 +327,22 @@ GAME_HTML = """
         busGroup.add(leftLight, rightLight);
         scene.add(busGroup);
         
-        // --- Opponent Car: classic sleek race car (never Haiti colors) ---
+        // --- Opponent Car with dynamic flag colors (never Haiti colors) ---
         const carGroup = new THREE.Group();
-
-        // Main chassis - long, low, sleek body
-        const carBodyMesh = new THREE.Mesh(
-            new THREE.BoxGeometry(1.05, 0.32, 2.5),
-            new THREE.MeshStandardMaterial({ color: 0xdd4422, roughness: 0.35, metalness: 0.2 })
-        );
-        carBodyMesh.position.y = 0.28;
-        carBodyMesh.castShadow = true;
+        const carBodyMesh = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 1.8), new THREE.MeshStandardMaterial({ color: 0xdd4422, roughness: 0.4 }));
+        carBodyMesh.position.y = 0.25;
         carGroup.add(carBodyMesh);
-
-        // Sloped hood (front nose taper, classic long-hood look)
-        const hoodMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.4 });
-        const hood = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.14, 0.75), hoodMat);
-        hood.position.set(0, 0.42, 0.95);
-        hood.rotation.x = -0.12;
-        hood.castShadow = true;
-        carGroup.add(hood);
-
-        // Front splitter
-        const splitter = new THREE.Mesh(
-            new THREE.BoxGeometry(1.15, 0.05, 0.25),
-            new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.6 })
-        );
-        splitter.position.set(0, 0.14, 1.3);
-        carGroup.add(splitter);
-
-        // Cabin / cockpit (set back from the long hood, classic silhouette)
-        const carRoofMesh = new THREE.Mesh(
-            new THREE.BoxGeometry(0.72, 0.3, 1.0),
-            new THREE.MeshStandardMaterial({ color: 0xaa3311, roughness: 0.35, metalness: 0.15 })
-        );
-        carRoofMesh.position.set(0, 0.58, -0.15);
-        carRoofMesh.castShadow = true;
+        const carRoofMesh = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.3, 1.2), new THREE.MeshStandardMaterial({ color: 0xaa3311 }));
+        carRoofMesh.position.y = 0.55;
         carGroup.add(carRoofMesh);
-
-        // Slanted windshield
-        const windshield = new THREE.Mesh(
-            new THREE.BoxGeometry(0.68, 0.28, 0.06),
-            new THREE.MeshStandardMaterial({ color: 0x99ddff, roughness: 0.1, metalness: 0.3, transparent: true, opacity: 0.85 })
-        );
-        windshield.position.set(0, 0.58, 0.36);
-        windshield.rotation.x = 0.55;
-        carGroup.add(windshield);
-
-        // Side mirrors
-        [-0.42, 0.42].forEach(x => {
-            const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.12), new THREE.MeshStandardMaterial({ color: 0x111111 }));
-            mirror.position.set(x, 0.55, 0.5);
-            carGroup.add(mirror);
-        });
-
-        // Rear spoiler (struts + wing)
-        const spoilerMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
-        [-0.4, 0.4].forEach(x => {
-            const strut = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.28, 0.06), spoilerMat);
-            strut.position.set(x, 0.48, -1.15);
-            carGroup.add(strut);
-        });
-        const wing = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.06, 0.32), spoilerMat);
-        wing.position.set(0, 0.62, -1.2);
-        wing.castShadow = true;
-        carGroup.add(wing);
-
-        // Exhaust pipes
-        [-0.28, 0.28].forEach(x => {
-            const pipe = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.06, 0.06, 0.2, 10),
-                new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8, roughness: 0.3 })
-            );
-            pipe.rotation.x = Math.PI / 2;
-            pipe.position.set(x, 0.14, -1.3);
-            carGroup.add(pipe);
-        });
-
-        // Headlights
-        const carLightMat = new THREE.MeshStandardMaterial({ color: 0xffffcc, emissive: 0xffee88, emissiveIntensity: 0.8 });
-        [-0.35, 0.35].forEach(x => {
-            const headlight = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), carLightMat);
-            headlight.position.set(x, 0.3, 1.28);
-            carGroup.add(headlight);
-        });
-
-        // Wheels with metallic rims (classic race-car look)
-        const wheelMatCar = new THREE.MeshStandardMaterial({ color: 0x161616, roughness: 0.7 });
-        const rimMatCar = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.85, roughness: 0.25 });
-        [[-0.56,0.22,0.85],[0.56,0.22,0.85],[-0.56,0.22,-0.95],[0.56,0.22,-0.95]].forEach(pos => {
-            const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.22, 16), wheelMatCar);
+        const wheelMatCar = new THREE.MeshStandardMaterial({ color: 0x222222 });
+        [[-0.5,0.1,0.7],[0.5,0.1,0.7],[-0.5,0.1,-0.7],[0.5,0.1,-0.7]].forEach(pos => {
+            const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.3, 12), wheelMatCar);
             wheel.rotation.z = Math.PI/2;
             wheel.position.set(pos[0], pos[1], pos[2]);
             wheel.castShadow = true;
             carGroup.add(wheel);
-            const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.24, 12), rimMatCar);
-            rim.rotation.z = Math.PI/2;
-            rim.position.set(pos[0], pos[1], pos[2]);
-            carGroup.add(rim);
         });
-
         let extraStripe = null;
         scene.add(carGroup);
         
@@ -434,7 +351,7 @@ GAME_HTML = """
         flagDiv.style.fontSize = '32px';
         flagDiv.style.filter = 'drop-shadow(0 0 2px black)';
         const carFlag = new CSS2DObject(flagDiv);
-        carFlag.position.set(0, 0.95, -0.15);
+        carFlag.position.set(0, 0.7, 0);
         carGroup.add(carFlag);
         
         // ---- Opponent Car Dynamic Color Mapping - distinct from Haiti bus ----
@@ -470,13 +387,13 @@ GAME_HTML = """
                     roofColor = 0xaa3311;
                     stripeColor = null;
             }
-            carBodyMesh.material = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.35, metalness: 0.2 });
-            carRoofMesh.material = new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.35, metalness: 0.15 });
+            carBodyMesh.material = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.4 });
+            carRoofMesh.material = new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.4 });
             if (stripeColor) {
-                const stripeGeo = new THREE.BoxGeometry(0.18, 0.03, 2.2);
-                const stripeMat = new THREE.MeshStandardMaterial({ color: stripeColor, roughness: 0.3 });
+                const stripeGeo = new THREE.BoxGeometry(0.12, 0.12, 1.6);
+                const stripeMat = new THREE.MeshStandardMaterial({ color: stripeColor });
                 extraStripe = new THREE.Mesh(stripeGeo, stripeMat);
-                extraStripe.position.set(0, 0.46, 0.05);
+                extraStripe.position.set(0, 0.38, 0);
                 extraStripe.castShadow = true;
                 carGroup.add(extraStripe);
             }
@@ -547,6 +464,10 @@ GAME_HTML = """
                     countdown--;
                     document.getElementById('message-box').innerHTML = `🏁 GO! 🏁`;
                     raceRunning = true;
+                    // Start the engine sound when race actually starts
+                    startEngineSound();
+                    // Brief startup rev effect
+                    engineRev();
                     setTimeout(() => {
                         if (raceActive && !winner) {
                             document.getElementById('message-box').innerHTML = `🏁 Race in progress! Use arrows to drive.`;
@@ -589,6 +510,8 @@ GAME_HTML = """
             startBtn.style.opacity = '1';
             // reset speed display
             document.getElementById('speed-value').innerText = "0";
+            // stop engine sound
+            stopEngineSound();
         }
         
         // Start the race (called when start button clicked)
@@ -767,6 +690,7 @@ GAME_HTML = """
                 playFinishFanfare('bus');
                 createBalloons();
                 opponentSelect.disabled = false; // allow new selection after race
+                stopEngineSound();
             } else if (carZ >= FINISH_LINE_Z && winner === null) {
                 winner = 'car';
                 raceRunning = false;
@@ -775,6 +699,7 @@ GAME_HTML = """
                 playFinishFanfare('car');
                 createBalloons();
                 opponentSelect.disabled = false;
+                stopEngineSound();
             }
         }
         
@@ -829,28 +754,138 @@ GAME_HTML = """
         startBtn.addEventListener('click', startRace);
         resetBtn.addEventListener('click', resetRace);
         
-        let engineOsc = null, engineGain = null;
+        // --- NEW ENGINE SOUND (classic race car) ---
+        let engineCtx = null;
+        let engineNodes = null;
+        let engineStarted = false; // whether oscillators have been started (they can be started once)
+        let engineRunning = false; // whether sound is currently audible (gains > 0)
+        
+        // Initialize audio context and nodes (called once on first user interaction)
         function initEngineSound() {
-            if (engineOsc) return;
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            engineOsc = ctx.createOscillator();
-            engineGain = ctx.createGain();
-            engineOsc.type = 'sawtooth';
-            engineOsc.frequency.value = 60;
-            engineGain.gain.value = 0;
-            engineOsc.connect(engineGain);
-            engineGain.connect(ctx.destination);
-            engineOsc.start();
-            window.engineCtx = ctx;
+            if (engineCtx) return;
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            try {
+                engineCtx = new AudioCtx();
+            } catch(e) {
+                return;
+            }
+            // Master gain
+            const masterGain = engineCtx.createGain();
+            masterGain.gain.value = 0.5;
+            masterGain.connect(engineCtx.destination);
+            
+            // Oscillator 1: sawtooth for growl
+            const osc1 = engineCtx.createOscillator();
+            osc1.type = 'sawtooth';
+            osc1.frequency.value = 80;
+            const gain1 = engineCtx.createGain();
+            gain1.gain.value = 0;
+            osc1.connect(gain1);
+            gain1.connect(masterGain);
+            
+            // Oscillator 2: sine for bass rumble
+            const osc2 = engineCtx.createOscillator();
+            osc2.type = 'sine';
+            osc2.frequency.value = 45;
+            const gain2 = engineCtx.createGain();
+            gain2.gain.value = 0;
+            osc2.connect(gain2);
+            gain2.connect(masterGain);
+            
+            // Noise (white) for road / exhaust
+            const bufferSize = 4096;
+            const buffer = engineCtx.createBuffer(1, bufferSize, engineCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            const noise = engineCtx.createBufferSource();
+            noise.buffer = buffer;
+            noise.loop = true;
+            const noiseGain = engineCtx.createGain();
+            noiseGain.gain.value = 0;
+            const filter = engineCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 300;
+            noise.connect(filter);
+            filter.connect(noiseGain);
+            noiseGain.connect(masterGain);
+            
+            // Store nodes
+            engineNodes = {
+                masterGain,
+                osc1, gain1,
+                osc2, gain2,
+                noise, noiseGain, filter
+            };
+            // Start oscillators (they will run continuously but with zero gain)
+            osc1.start();
+            osc2.start();
+            noise.start();
+            engineStarted = true;
+            engineCtx.resume();
         }
+        
+        // Start the engine sound (set gains > 0)
+        function startEngineSound() {
+            if (!engineNodes) initEngineSound();
+            if (!engineNodes) return;
+            if (engineCtx.state === 'suspended') engineCtx.resume();
+            engineRunning = true;
+            // Gains will be updated via updateEngineSound based on speed
+        }
+        
+        // Brief startup rev effect (sweep up and down)
+        function engineRev() {
+            if (!engineNodes || !engineRunning) return;
+            const now = engineCtx.currentTime;
+            // Sweep osc1 frequency from 80 to 200 and back
+            engineNodes.osc1.frequency.setValueAtTime(80, now);
+            engineNodes.osc1.frequency.linearRampToValueAtTime(250, now + 0.3);
+            engineNodes.osc1.frequency.linearRampToValueAtTime(80, now + 0.6);
+            // Quick gain boost
+            engineNodes.gain1.gain.setValueAtTime(0.05, now);
+            engineNodes.gain1.gain.linearRampToValueAtTime(0.2, now + 0.15);
+            engineNodes.gain1.gain.linearRampToValueAtTime(0.05, now + 0.6);
+            engineNodes.gain2.gain.setValueAtTime(0.02, now);
+            engineNodes.gain2.gain.linearRampToValueAtTime(0.1, now + 0.2);
+            engineNodes.gain2.gain.linearRampToValueAtTime(0.02, now + 0.6);
+            engineNodes.noiseGain.gain.setValueAtTime(0.01, now);
+            engineNodes.noiseGain.gain.linearRampToValueAtTime(0.05, now + 0.2);
+            engineNodes.noiseGain.gain.linearRampToValueAtTime(0.01, now + 0.6);
+        }
+        
+        // Stop the engine sound (set gains to 0)
+        function stopEngineSound() {
+            if (!engineNodes) return;
+            engineRunning = false;
+            const now = engineCtx.currentTime;
+            engineNodes.gain1.gain.setValueAtTime(0, now);
+            engineNodes.gain2.gain.setValueAtTime(0, now);
+            engineNodes.noiseGain.gain.setValueAtTime(0, now);
+        }
+        
+        // Update engine parameters based on current speed
         function updateEngineSound(speed) {
-            if (!engineOsc || !window.engineCtx) return;
-            if (window.engineCtx.state === 'suspended') window.engineCtx.resume();
+            if (!engineNodes || !engineRunning) return;
             const absSpd = Math.abs(speed);
             const norm = Math.min(1, absSpd / MAX_SPEED);
-            engineOsc.frequency.value = 55 + norm * 140;
-            engineGain.gain.value = absSpd > 0.5 ? 0.1 + norm * 0.2 : 0;
+            // osc1: 80 - 350 Hz
+            engineNodes.osc1.frequency.value = 80 + norm * 270;
+            // osc2: 45 - 180 Hz
+            engineNodes.osc2.frequency.value = 45 + norm * 135;
+            // filter frequency for noise: 200 - 800 Hz
+            engineNodes.filter.frequency.value = 200 + norm * 600;
+            // Gains: increase with speed
+            const g1 = 0.02 + norm * 0.25;
+            const g2 = 0.01 + norm * 0.12;
+            const gNoise = 0.005 + norm * 0.08;
+            engineNodes.gain1.gain.value = g1;
+            engineNodes.gain2.gain.value = g2;
+            engineNodes.noiseGain.gain.value = gNoise;
         }
+        
+        // --- End of engine sound code ---
+        
+        // We'll call updateEngineSound from the main loop instead of the old one.
         
         function updateCamera() {
             const targetX = busLateral * 0.3;
@@ -871,6 +906,7 @@ GAME_HTML = """
                 updateAI(dt);
                 checkCollisions();
                 checkFinish();
+                // Update engine sound with current bus speed
                 updateEngineSound(busSpeed);
                 speedSpan.innerText = Math.floor(Math.abs(busSpeed) * 3.6);
             }
@@ -882,9 +918,10 @@ GAME_HTML = """
             requestAnimationFrame(animate);
         }
         
+        // Initialize audio on first keypress
         window.addEventListener('keydown', () => {
-            if (!engineOsc) initEngineSound();
-            if (window.engineCtx && window.engineCtx.state === 'suspended') window.engineCtx.resume();
+            if (!engineCtx) initEngineSound();
+            if (engineCtx && engineCtx.state === 'suspended') engineCtx.resume();
         });
         
         fullReset(); // initial pre-start state
@@ -899,7 +936,6 @@ GAME_HTML = """
     </script>
 </body>
 </html>
-
 """
 
 components.html(GAME_HTML, height=900, scrolling=False)
