@@ -13,7 +13,7 @@ st.markdown(
     <style>
         #MainMenu, header, footer {visibility: hidden;}
         .block-container {padding: 0 !important; margin: 0 !important; max-width: 100% !important;}
-        iframe {height: 100vh !important;}
+        iframe {height: 100vh !important; width: 100% !important; border: none !important;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -28,78 +28,128 @@ GAME_HTML = """
     <title>Race: Haiti Bus vs World | Gesner Deslandes</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', 'Courier New', monospace; }
+        /* INFO PANEL – subtle, small, top-left */
         #info-panel {
-            position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(8px); padding: 12px 20px; border-radius: 16px;
-            border-left: 6px solid #D21034; z-index: 100; color: white;
-            pointer-events: none; font-weight: bold; text-shadow: 1px 1px 0 black;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 14px;
+            position: absolute; top: 10px; left: 10px;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(4px);
+            padding: 4px 10px;
+            border-radius: 12px;
+            border-left: 3px solid #D21034;
+            z-index: 100;
+            color: rgba(255,255,255,0.7);
+            font-size: 8px;
+            pointer-events: none;
+            font-weight: normal;
+            text-shadow: 0 0 4px black;
+            transition: opacity 0.5s;
         }
-        .flag-haiti { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .flag-rect { width: 40px; height: 24px; background: linear-gradient(to bottom, #00209F 50%, #D21034 50%); border-radius: 4px; border: 1px solid gold; }
-        .names { font-size: 12px; line-height: 1.4; }
-        .names span { color: #ffd966; }
+        #info-panel .flag-haiti { display: none; }
+        #info-panel .names { font-size: 7px; line-height: 1.2; }
+        #info-panel .names span { color: #ffd966; }
+
+        /* SPEED PANEL – bottom-right, small */
         #speed-panel {
-            position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7);
-            padding: 10px 18px; border-radius: 20px; font-family: monospace; font-size: 22px;
-            font-weight: bold; color: #0ff; z-index: 100; backdrop-filter: blur(4px);
-            border: 1px solid cyan; pointer-events: none;
+            position: absolute; bottom: 90px; right: 10px;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: bold;
+            color: rgba(0,255,255,0.8);
+            z-index: 100;
+            border: 1px solid rgba(0,255,255,0.2);
+            pointer-events: none;
         }
+
         #message-box {
             position: absolute; bottom: 30%; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.85); padding: 12px 24px; border-radius: 40px;
-            color: gold; font-weight: bold; font-size: 18px; text-align: center;
-            white-space: nowrap; pointer-events: none; z-index: 100;
-            font-family: monospace; transition: 0.2s; border: 1px solid #ffaa33;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 16px;
+            border-radius: 30px;
+            color: gold;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 100;
+            font-family: monospace;
+            border: 1px solid #ffaa33;
             backdrop-filter: blur(4px);
         }
-        #controls-hint {
-            position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.5);
-            padding: 5px 12px; border-radius: 12px; font-size: 12px; color: #ccc;
-            font-family: monospace; pointer-events: none;
-        }
+
+        #controls-hint { display: none; } /* hidden to reduce clutter */
+
         .button-group {
-            position: absolute; bottom: 30px; right: 20px; display: flex; gap: 12px; z-index: 200;
+            position: absolute; bottom: 30px; right: 20px;
+            display: flex; gap: 12px; z-index: 200;
         }
         button {
-            background: #222; color: white;
-            border: 1px solid orange; padding: 6px 12px; border-radius: 20px;
-            cursor: pointer; font-weight: bold; font-family: monospace;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: 1px solid orange;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 14px;
             touch-action: manipulation;
+            backdrop-filter: blur(4px);
         }
         button:hover { background: #ff6600; }
-        #flag-selector {
-            position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(8px); padding: 8px 12px; border-radius: 20px;
-            color: white; font-family: monospace; z-index: 200;
-            display: flex; gap: 8px; align-items: center;
-        }
-        select { background: #333; color: white; border: 1px solid gold; border-radius: 8px; padding: 4px 8px; }
 
-        /* VIRTUAL CONTROLS – added for mobile */
+        #flag-selector {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            padding: 4px 10px;
+            border-radius: 16px;
+            color: white;
+            font-family: monospace;
+            font-size: 11px;
+            z-index: 200;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        select {
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: 1px solid gold;
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-size: 11px;
+        }
+
+        /* VIRTUAL CONTROLS – bottom center */
         #virtual-controls {
             position: fixed;
-            bottom: 30px;
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 20px;
+            gap: 16px;
             z-index: 300;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.3);
             backdrop-filter: blur(6px);
-            padding: 12px 24px;
-            border-radius: 60px;
-            border: 1px solid rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.1);
             touch-action: none;
         }
         .ctrl-btn {
-            width: 60px;
-            height: 60px;
+            width: 52px;
+            height: 52px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.15);
-            border: 2px solid rgba(255,255,255,0.4);
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
             color: white;
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
             display: flex;
             align-items: center;
@@ -110,45 +160,44 @@ GAME_HTML = """
             transition: 0.1s;
         }
         .ctrl-btn:active {
-            background: rgba(255,255,255,0.35);
-            transform: scale(0.92);
+            background: rgba(255,255,255,0.25);
+            transform: scale(0.88);
         }
-        .ctrl-btn.up { background: rgba(0,200,80,0.3); border-color: #0f0; }
-        .ctrl-btn.down { background: rgba(200,50,50,0.3); border-color: #f44; }
-        .ctrl-btn.left, .ctrl-btn.right { background: rgba(50,130,255,0.3); border-color: #4af; }
-        #virtual-controls .spacer { width: 20px; }
+        .ctrl-btn.up { background: rgba(0,200,80,0.25); border-color: #0f0; }
+        .ctrl-btn.down { background: rgba(200,50,50,0.25); border-color: #f44; }
+        .ctrl-btn.left, .ctrl-btn.right { background: rgba(50,130,255,0.25); border-color: #4af; }
+        #virtual-controls .spacer { width: 10px; }
 
         @media (max-width: 600px) {
-            #info-panel { font-size: 8px; top: 8px; left: 8px; padding: 6px 12px; }
-            .names { font-size: 8px; }
-            #speed-panel { font-size: 16px; bottom: 100px; right: 10px; }
-            #message-box { font-size: 12px; white-space: nowrap; bottom: 25%;}
-            #flag-selector { font-size: 10px; top: 8px; right: 8px; }
-            #controls-hint { display: none; }
-            #virtual-controls { gap: 12px; padding: 10px 16px; bottom: 20px; }
-            .ctrl-btn { width: 50px; height: 50px; font-size: 22px; }
+            #info-panel { font-size: 7px; top: 6px; left: 6px; padding: 2px 8px; }
+            #info-panel .names { font-size: 6px; }
+            #speed-panel { font-size: 12px; bottom: 80px; right: 6px; padding: 2px 8px; }
+            #message-box { font-size: 12px; bottom: 28%; padding: 4px 12px; }
+            #flag-selector { font-size: 9px; top: 6px; right: 6px; padding: 2px 8px; }
+            #virtual-controls { gap: 10px; padding: 8px 14px; bottom: 12px; }
+            .ctrl-btn { width: 44px; height: 44px; font-size: 20px; }
         }
     </style>
 </head>
 <body>
+    <!-- Info panel – very subtle -->
     <div id="info-panel">
-        <div class="flag-haiti"><div class="flag-rect"></div><span>🇭🇹 HAITI 🇭🇹</span></div>
-        <div class="names">🚌 <span>Gesner Deslandes</span><br>
-        👨‍🔧 Gesner Junior Deslandes | Roosevelt Deslandes<br>
-        🧑‍🔧 Sebastien Stephane Deslandes | Zendaya Christelle Deslandes</div>
+        <div class="names">🚌 <span>Gesner Deslandes</span> · Gesner Jr · Roosevelt · Sebastien · Zendaya</div>
     </div>
-    <div id="speed-panel">🚍 SPEED: <span id="speed-value">0</span> km/h</div>
+
+    <div id="speed-panel">🚍 <span id="speed-value">0</span> km/h</div>
     <div id="message-box">🏁 Choose opponent and press START</div>
-    <div id="controls-hint">🎮 [UP] accelerate | [DOWN] brake/reverse | [LEFT/RIGHT] steer | ⚠️ Avoid obstacles!</div>
+
     <div class="button-group">
-        <button id="startBtn">🚦 START RACE</button>
+        <button id="startBtn">🚦 START</button>
         <button id="resetBtn">🔄 RESET</button>
     </div>
+
     <div id="flag-selector">
-        🏁 Opponent Flag:
+        🏁 Opponent:
         <select id="opponentFlag">
-            <option value="dominican">🇩🇴 Dominican Republic</option>
-            <option value="usa">🇺🇸 United States</option>
+            <option value="dominican">🇩🇴 Dominican</option>
+            <option value="usa">🇺🇸 USA</option>
             <option value="france">🇫🇷 France</option>
             <option value="brazil">🇧🇷 Brazil</option>
         </select>
@@ -175,7 +224,7 @@ GAME_HTML = """
         import * as THREE from 'three';
         import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
-        // --- setup scene, camera, renderers ---
+        // --- scene setup (unchanged) ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0a1030);
         scene.fog = new THREE.FogExp2(0x0a1030, 0.008);
@@ -215,7 +264,7 @@ GAME_HTML = """
         const FINISH_LINE_Z = 400;
         const START_LINE_Z = 0;
         
-        // --- Road (single long plane covering start to finish) ---
+        // --- Road ---
         const roadLength = FINISH_LINE_Z + 60;
         const roadMat = new THREE.MeshStandardMaterial({ color: 0x2c2e3a, roughness: 0.7 });
         const roadPlane = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_WIDTH, roadLength), roadMat);
@@ -233,7 +282,6 @@ GAME_HTML = """
             line.castShadow = false;
             scene.add(line);
         }
-        // Edge lines
         const edgeMat = new THREE.MeshStandardMaterial({ color: 0xccaa55 });
         for (let side = -1; side <= 1; side+=2) {
             for (let z = 0; z <= FINISH_LINE_Z + 20; z+=3) {
@@ -243,14 +291,13 @@ GAME_HTML = """
             }
         }
         
-        // Start line (green)
+        // Start / Finish
         const startMat = new THREE.MeshStandardMaterial({ color: 0x44aa44 });
         for (let i = -3; i <= 3; i+=1) {
             const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 1), startMat);
             stripe.position.set(i * 0.6, 0.08, START_LINE_Z);
             scene.add(stripe);
         }
-        // Finish line
         const finishMatRed = new THREE.MeshStandardMaterial({ color: 0xdd2222 });
         const finishMatWhite = new THREE.MeshStandardMaterial({ color: 0xeeeeee });
         for (let i = -3; i <= 3; i+=1) {
@@ -300,7 +347,7 @@ GAME_HTML = """
             obstacles.push(new Obstacle(z, Math.random() > 0.6 ? 'rock' : 'log'));
         }
         
-        // --- Environment (trees, rocks, cliffs) ---
+        // --- Environment ---
         const treeTrunkMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B });
         const treeTopMat = new THREE.MeshStandardMaterial({ color: 0x5c9e3e });
         const rockMat = new THREE.MeshStandardMaterial({ color: 0x6a705c });
@@ -336,7 +383,7 @@ GAME_HTML = """
             }
         }
         
-        // --- Bus model (blue & red) - HAITI stays unchanged ---
+        // --- Bus model ---
         const busGroup = new THREE.Group();
         const bodyGeo = new THREE.BoxGeometry(1.4, 0.9, 2.8);
         const blueMatBus = new THREE.MeshStandardMaterial({ color: 0x2a6fdb, roughness: 0.3 });
@@ -344,7 +391,6 @@ GAME_HTML = """
         body.castShadow = true;
         body.position.y = 0.45;
         busGroup.add(body);
-        
         const redStripeMatBus = new THREE.MeshStandardMaterial({ color: 0xcc3333 });
         const stripeLeft = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 2.6), redStripeMatBus);
         stripeLeft.position.set(-0.75, 0.55, 0);
@@ -355,7 +401,6 @@ GAME_HTML = """
         const roofStripe = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 2.2), redStripeMatBus);
         roofStripe.position.set(0, 0.9, 0);
         busGroup.add(roofStripe);
-        
         const glassMatBus = new THREE.MeshStandardMaterial({ color: 0x88ccff });
         for (let i = -0.8; i <= 0.8; i+=0.8) {
             const win = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.35, 0.08), glassMatBus);
@@ -382,7 +427,7 @@ GAME_HTML = """
         busGroup.add(leftLight, rightLight);
         scene.add(busGroup);
         
-        // --- Opponent Car with dynamic flag colors (never Haiti colors) ---
+        // --- Opponent Car ---
         const carGroup = new THREE.Group();
         const carBodyMesh = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.5, 1.8), new THREE.MeshStandardMaterial({ color: 0xdd4422, roughness: 0.4 }));
         carBodyMesh.position.y = 0.25;
@@ -401,7 +446,6 @@ GAME_HTML = """
         let extraStripe = null;
         scene.add(carGroup);
         
-        // CSS2D flag emoji above car
         let flagDiv = document.createElement('div');
         flagDiv.style.fontSize = '32px';
         flagDiv.style.filter = 'drop-shadow(0 0 2px black)';
@@ -409,7 +453,6 @@ GAME_HTML = """
         carFlag.position.set(0, 0.7, 0);
         carGroup.add(carFlag);
         
-        // ---- Opponent Car Dynamic Color Mapping - distinct from Haiti bus ----
         function updateCarColorsByFlag(flagValue) {
             if (extraStripe) {
                 carGroup.remove(extraStripe);
@@ -417,30 +460,16 @@ GAME_HTML = """
             }
             let bodyColor, roofColor, stripeColor;
             switch(flagValue) {
-                case 'dominican': // Dominican Republic: white body, red roof, blue stripe
-                    bodyColor = 0xffffff;
-                    roofColor = 0xce1126;
-                    stripeColor = 0x002b7f;
-                    break;
-                case 'usa': // USA: red body, white roof, blue stripe
-                    bodyColor = 0xb22234;
-                    roofColor = 0xffffff;
-                    stripeColor = 0x3c3b6e;
-                    break;
-                case 'france': // France: blue body, white roof, red stripe
-                    bodyColor = 0x0055a4;
-                    roofColor = 0xffffff;
-                    stripeColor = 0xef4135;
-                    break;
-                case 'brazil': // Brazil: green body, yellow roof, blue stripe
-                    bodyColor = 0x009c3b;
-                    roofColor = 0xffdf00;
-                    stripeColor = 0x002776;
-                    break;
+                case 'dominican':
+                    bodyColor = 0xffffff; roofColor = 0xce1126; stripeColor = 0x002b7f; break;
+                case 'usa':
+                    bodyColor = 0xb22234; roofColor = 0xffffff; stripeColor = 0x3c3b6e; break;
+                case 'france':
+                    bodyColor = 0x0055a4; roofColor = 0xffffff; stripeColor = 0xef4135; break;
+                case 'brazil':
+                    bodyColor = 0x009c3b; roofColor = 0xffdf00; stripeColor = 0x002776; break;
                 default:
-                    bodyColor = 0xdd4422;
-                    roofColor = 0xaa3311;
-                    stripeColor = null;
+                    bodyColor = 0xdd4422; roofColor = 0xaa3311; stripeColor = null;
             }
             carBodyMesh.material = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.4 });
             carRoofMesh.material = new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.4 });
@@ -453,7 +482,6 @@ GAME_HTML = """
                 carGroup.add(extraStripe);
             }
         }
-        
         function updateOpponentFlagAndColors() {
             const select = document.getElementById('opponentFlag');
             const val = select.value;
@@ -471,40 +499,22 @@ GAME_HTML = """
         updateOpponentFlagAndColors();
         document.getElementById('opponentFlag').addEventListener('change', updateOpponentFlagAndColors);
         
-        // --- Race state with pre-start mode ---
-        let busZ = 0;
-        let carZ = 0;
-        let busSpeed = 8;
-        let carSpeed = 8;
-        let busLateral = -1.0;
-        let carLateral = 1.2;
-        let crashed = false;
-        let raceActive = false;
-        let raceRunning = false;
-        let winner = null;
-        let countdown = 0;
-        let countdownInterval = null;
+        // --- Race state ---
+        let busZ = 0, carZ = 0;
+        let busSpeed = 8, carSpeed = 8;
+        let busLateral = -1.0, carLateral = 1.2;
+        let crashed = false, raceActive = false, raceRunning = false;
+        let winner = null, countdown = 0, countdownInterval = null;
+        const MAX_SPEED = 32, MAX_REVERSE = -6, ACCEL = 1.2, BRAKE = 1.6;
+        let aiTargetSpeed = 12, carSteering = 0;
         
-        const MAX_SPEED = 32;
-        const MAX_REVERSE = -6;
-        const ACCEL = 1.2;
-        const BRAKE = 1.6;
-        
-        let aiTargetSpeed = 12;
-        let carSteering = 0;
-        
-        // DOM elements
         const startBtn = document.getElementById('startBtn');
         const resetBtn = document.getElementById('resetBtn');
         const opponentSelect = document.getElementById('opponentFlag');
         
         function stopCountdown() {
-            if (countdownInterval) {
-                clearInterval(countdownInterval);
-                countdownInterval = null;
-            }
+            if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
         }
-        
         function startCountdown() {
             if (countdownInterval) stopCountdown();
             countdown = 3;
@@ -532,22 +542,14 @@ GAME_HTML = """
                 }
             }, 1000);
         }
-        
         function fullReset() {
             stopCountdown();
-            raceActive = false;
-            raceRunning = false;
-            winner = null;
-            crashed = false;
-            finishSoundPlayed = false;
-            busZ = 0;
-            carZ = 0;
-            busSpeed = 8;
-            carSpeed = 8;
-            busLateral = -1.0;
-            carLateral = 1.2;
-            aiTargetSpeed = 12;
-            carSteering = 0;
+            raceActive = false; raceRunning = false;
+            winner = null; crashed = false; finishSoundPlayed = false;
+            busZ = 0; carZ = 0;
+            busSpeed = 8; carSpeed = 8;
+            busLateral = -1.0; carLateral = 1.2;
+            aiTargetSpeed = 12; carSteering = 0;
             busGroup.position.set(busLateral, 0.2, 0);
             carGroup.position.set(carLateral, 0.2, 0);
             balloons.forEach(b => scene.remove(b.mesh));
@@ -559,32 +561,29 @@ GAME_HTML = """
             document.getElementById('speed-value').innerText = "0";
             stopEngineSound();
         }
-        
         function startRace() {
             if (raceActive) return;
             fullReset();
             opponentSelect.disabled = true;
             startCountdown();
         }
+        startBtn.addEventListener('click', startRace);
+        resetBtn.addEventListener('click', fullReset);
         
+        // --- AI ---
         function updateAI(dt) {
             if (!raceRunning) return;
             const lookahead = 35;
-            let nearestObstacle = null;
-            let minDist = Infinity;
+            let nearestObstacle = null, minDist = Infinity;
             for (let obs of obstacles) {
                 if (!obs.active) continue;
                 const dist = obs.z - carZ;
                 if (dist > 0 && dist < lookahead && Math.abs(obs.x - carLateral) < 1.2) {
-                    if (dist < minDist) {
-                        minDist = dist;
-                        nearestObstacle = obs;
-                    }
+                    if (dist < minDist) { minDist = dist; nearestObstacle = obs; }
                 }
             }
             if (nearestObstacle) {
-                if (nearestObstacle.x > carLateral) carSteering = -1.2;
-                else carSteering = 1.2;
+                carSteering = (nearestObstacle.x > carLateral) ? -1.2 : 1.2;
             } else {
                 if (carLateral < 1.0) carSteering = 0.8;
                 else if (carLateral > 1.4) carSteering = -0.8;
@@ -604,7 +603,7 @@ GAME_HTML = """
             carGroup.position.y = 0.2;
         }
         
-        // --- keyboard & virtual controls integration ---
+        // --- Keyboard & Virtual Controls ---
         const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
         window.addEventListener('keydown', (e) => {
             if (e.key.startsWith('Arrow')) e.preventDefault();
@@ -613,11 +612,10 @@ GAME_HTML = """
         });
         window.addEventListener('keyup', (e) => { if (e.key.startsWith('Arrow')) keys[e.key] = false; });
         
-        // Virtual buttons (touch/click)
         function setupVirtualButton(id, key) {
             const btn = document.getElementById(id);
             if (!btn) return;
-            const start = (e) => { e.preventDefault(); keys[key] = true; };
+            const start = (e) => { e.preventDefault(); keys[key] = true; initEngineSound(); };
             const end = (e) => { e.preventDefault(); keys[key] = false; };
             btn.addEventListener('mousedown', start);
             btn.addEventListener('mouseup', end);
@@ -630,6 +628,10 @@ GAME_HTML = """
         setupVirtualButton('btn-down', 'ArrowDown');
         setupVirtualButton('btn-left', 'ArrowLeft');
         setupVirtualButton('btn-right', 'ArrowRight');
+        
+        // Also resume audio on any touch/click anywhere
+        document.addEventListener('click', () => { initEngineSound(); });
+        document.addEventListener('touchstart', () => { initEngineSound(); }, { passive: true });
         
         function updateBus(dt) {
             if (!raceRunning) return;
@@ -664,24 +666,18 @@ GAME_HTML = """
             for (let obs of obstacles) {
                 if (!obs.active) continue;
                 if (Math.abs(obs.z - busZ) < 1.2 && Math.abs(obs.x - busX) < 0.9) {
-                    crashed = true;
-                    raceRunning = false;
-                    raceActive = false;
+                    crashed = true; raceRunning = false; raceActive = false;
                     showMessage(`💥 Bus crashed! Press RESET.`, true);
                     return;
                 }
                 if (Math.abs(obs.z - carZ) < 1.2 && Math.abs(obs.x - carX) < 0.8) {
-                    crashed = true;
-                    raceRunning = false;
-                    raceActive = false;
+                    crashed = true; raceRunning = false; raceActive = false;
                     showMessage(`💥 Opponent crashed! Press RESET.`, true);
                     return;
                 }
             }
             if (Math.abs(busLateral) > LANE_LIMIT) {
-                crashed = true;
-                raceRunning = false;
-                raceActive = false;
+                crashed = true; raceRunning = false; raceActive = false;
                 showMessage(`💥 Bus drove off road! Press RESET.`, true);
                 return;
             }
@@ -693,14 +689,11 @@ GAME_HTML = """
             finishSoundPlayed = true;
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
             let ctx = null;
-            try {
-                ctx = new AudioCtx();
-            } catch(e) { return; }
+            try { ctx = new AudioCtx(); } catch(e) { return; }
             const now = ctx.currentTime;
             const masterGain = ctx.createGain();
             masterGain.gain.value = 0.5;
             masterGain.connect(ctx.destination);
-            
             const notes = [261.63, 329.63, 392.00, 523.25];
             const durations = [0.25, 0.25, 0.25, 0.6];
             for (let i = 0; i < notes.length; i++) {
@@ -728,7 +721,6 @@ GAME_HTML = """
             noiseGain.connect(masterGain);
             noise.start(now + 0.4);
             noise.stop(now + 1.2);
-            
             const drum = ctx.createOscillator();
             drum.type = 'triangle';
             drum.frequency.value = 150;
@@ -745,8 +737,7 @@ GAME_HTML = """
             if (!raceRunning) return;
             if (busZ >= FINISH_LINE_Z && winner === null) {
                 winner = 'bus';
-                raceRunning = false;
-                raceActive = false;
+                raceRunning = false; raceActive = false;
                 showMessage(`🏆 HAITI BUS WINS! 🎉🏆`, false);
                 playFinishFanfare('bus');
                 createBalloons();
@@ -754,8 +745,7 @@ GAME_HTML = """
                 stopEngineSound();
             } else if (carZ >= FINISH_LINE_Z && winner === null) {
                 winner = 'car';
-                raceRunning = false;
-                raceActive = false;
+                raceRunning = false; raceActive = false;
                 showMessage(`🏆 OPPONENT CAR WINS! Better luck next time! 🏆`, false);
                 playFinishFanfare('car');
                 createBalloons();
@@ -764,18 +754,11 @@ GAME_HTML = """
             }
         }
         
-        function resetRace() {
-            fullReset();
-            opponentSelect.disabled = false;
-            startBtn.disabled = false;
-            startBtn.style.opacity = '1';
-        }
-        
         let balloons = [];
         function createBalloons() {
             for (let i = 0; i < 20; i++) {
                 const color = new THREE.Color().setHSL(Math.random(), 0.8, 0.6);
-                const balloonMat = new THREE.MeshStandardMaterial({ color: color });
+                const balloonMat = new THREE.MeshStandardMaterial({ color });
                 const balloon = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), balloonMat);
                 const x = (Math.random() - 0.5) * 6;
                 const z = FINISH_LINE_Z + (Math.random() - 0.5) * 5;
@@ -784,7 +767,6 @@ GAME_HTML = """
                 balloons.push({ mesh: balloon, lift: 0, speed: 0.5 + Math.random() * 0.5 });
             }
         }
-        
         function updateBalloons(dt) {
             for (let i=0; i<balloons.length; i++) {
                 const b = balloons[i];
@@ -812,27 +794,19 @@ GAME_HTML = """
             }, duration);
         }
         
-        startBtn.addEventListener('click', startRace);
-        resetBtn.addEventListener('click', resetRace);
-        
         // --- Engine Sound ---
-        let engineCtx = null;
-        let engineNodes = null;
-        let engineStarted = false;
-        let engineRunning = false;
-        
+        let engineCtx = null, engineNodes = null, engineRunning = false;
         function initEngineSound() {
-            if (engineCtx) return;
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            try {
-                engineCtx = new AudioCtx();
-            } catch(e) {
+            if (engineCtx && engineCtx.state === 'suspended') {
+                engineCtx.resume();
                 return;
             }
+            if (engineCtx) return;
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            try { engineCtx = new AudioCtx(); } catch(e) { return; }
             const masterGain = engineCtx.createGain();
             masterGain.gain.value = 0.5;
             masterGain.connect(engineCtx.destination);
-            
             const osc1 = engineCtx.createOscillator();
             osc1.type = 'sawtooth';
             osc1.frequency.value = 80;
@@ -840,7 +814,6 @@ GAME_HTML = """
             gain1.gain.value = 0;
             osc1.connect(gain1);
             gain1.connect(masterGain);
-            
             const osc2 = engineCtx.createOscillator();
             osc2.type = 'sine';
             osc2.frequency.value = 45;
@@ -848,7 +821,6 @@ GAME_HTML = """
             gain2.gain.value = 0;
             osc2.connect(gain2);
             gain2.connect(masterGain);
-            
             const bufferSize = 4096;
             const buffer = engineCtx.createBuffer(1, bufferSize, engineCtx.sampleRate);
             const data = buffer.getChannelData(0);
@@ -864,27 +836,16 @@ GAME_HTML = """
             noise.connect(filter);
             filter.connect(noiseGain);
             noiseGain.connect(masterGain);
-            
-            engineNodes = {
-                masterGain,
-                osc1, gain1,
-                osc2, gain2,
-                noise, noiseGain, filter
-            };
-            osc1.start();
-            osc2.start();
-            noise.start();
-            engineStarted = true;
+            engineNodes = { masterGain, osc1, gain1, osc2, gain2, noise, noiseGain, filter };
+            osc1.start(); osc2.start(); noise.start();
             engineCtx.resume();
         }
-        
         function startEngineSound() {
             if (!engineNodes) initEngineSound();
             if (!engineNodes) return;
             if (engineCtx.state === 'suspended') engineCtx.resume();
             engineRunning = true;
         }
-        
         function engineRev() {
             if (!engineNodes || !engineRunning) return;
             const now = engineCtx.currentTime;
@@ -901,7 +862,6 @@ GAME_HTML = """
             engineNodes.noiseGain.gain.linearRampToValueAtTime(0.05, now + 0.2);
             engineNodes.noiseGain.gain.linearRampToValueAtTime(0.01, now + 0.6);
         }
-        
         function stopEngineSound() {
             if (!engineNodes) return;
             engineRunning = false;
@@ -910,7 +870,6 @@ GAME_HTML = """
             engineNodes.gain2.gain.setValueAtTime(0, now);
             engineNodes.noiseGain.gain.setValueAtTime(0, now);
         }
-        
         function updateEngineSound(speed) {
             if (!engineNodes || !engineRunning) return;
             const absSpd = Math.abs(speed);
@@ -926,6 +885,7 @@ GAME_HTML = """
             engineNodes.noiseGain.gain.value = gNoise;
         }
         
+        // --- Camera ---
         function updateCamera() {
             const targetX = busLateral * 0.3;
             const targetY = 3.5 + Math.min(1.2, Math.abs(busSpeed)/20) * 0.5;
@@ -934,6 +894,7 @@ GAME_HTML = """
             camera.lookAt(busLateral, 1.0, busZ);
         }
         
+        // --- Main loop ---
         let lastTime = performance.now();
         function animate() {
             const now = performance.now();
@@ -956,11 +917,6 @@ GAME_HTML = """
             requestAnimationFrame(animate);
         }
         
-        window.addEventListener('keydown', () => {
-            if (!engineCtx) initEngineSound();
-            if (engineCtx && engineCtx.state === 'suspended') engineCtx.resume();
-        });
-        
         fullReset();
         animate();
         
@@ -975,4 +931,4 @@ GAME_HTML = """
 </html>
 """
 
-components.html(GAME_HTML, height=900, scrolling=False)
+components.html(GAME_HTML, height=1000, scrolling=False)
