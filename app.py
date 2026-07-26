@@ -175,25 +175,29 @@ GAME_HTML = """
             font-size: 10px;
         }
 
-        /* VIRTUAL CONTROLS – positioned ABOVE START/RESET */
-        #virtual-controls {
+        /* === VIRTUAL CONTROLS – split left/right === */
+        #left-controls, #right-controls {
             position: fixed;
-            bottom: 95px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 14px;
+            bottom: 85px;
             z-index: 300;
-            background: rgba(0,0,0,0.25);
-            backdrop-filter: blur(6px);
-            padding: 10px 18px;
-            border-radius: 50px;
-            border: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            gap: 10px;
             touch-action: none;
         }
+        #left-controls {
+            left: 20px;
+            flex-direction: column;
+            align-items: center;
+        }
+        #right-controls {
+            right: 20px;
+            flex-direction: column;
+            align-items: center;
+        }
+        /* D-pad style: left and right controls are a 3-button column */
         .ctrl-btn {
-            width: 50px;
-            height: 50px;
+            width: 52px;
+            height: 52px;
             border-radius: 50%;
             background: rgba(255,255,255,0.08);
             border: 2px solid rgba(255,255,255,0.15);
@@ -215,7 +219,16 @@ GAME_HTML = """
         }
         .ctrl-btn.up { background: rgba(0,200,80,0.2); border-color: rgba(0,255,0,0.3); }
         .ctrl-btn.down { background: rgba(200,50,50,0.2); border-color: rgba(255,68,68,0.3); }
-        .ctrl-btn.left, .ctrl-btn.right { background: rgba(50,130,255,0.2); border-color: rgba(68,170,255,0.3); }
+        .ctrl-btn.left { background: rgba(50,130,255,0.2); border-color: rgba(68,170,255,0.3); }
+        .ctrl-btn.right { background: rgba(50,130,255,0.2); border-color: rgba(68,170,255,0.3); }
+
+        /* arrange left group: up, down, left – left is at bottom of column */
+        #left-controls .ctrl-btn.up { order: 1; }
+        #left-controls .ctrl-btn.down { order: 2; }
+        #left-controls .ctrl-btn.left { order: 3; }
+
+        /* right group just has right button */
+        #right-controls .ctrl-btn.right { order: 1; }
 
         @media (max-width: 600px) {
             #info-panel { font-size: 6px; top: 6px; left: 6px; padding: 2px 8px; }
@@ -223,8 +236,9 @@ GAME_HTML = """
             #speed-panel { font-size: 11px; bottom: 55px; right: 6px; padding: 2px 8px; }
             #message-box { font-size: 11px; bottom: 28%; padding: 4px 10px; white-space: nowrap; }
             #flag-selector { font-size: 8px; top: 6px; right: 60px; padding: 2px 6px; }
-            #virtual-controls { gap: 8px; padding: 8px 12px; bottom: 85px; }
-            .ctrl-btn { width: 42px; height: 42px; font-size: 18px; }
+            .ctrl-btn { width: 44px; height: 44px; font-size: 18px; }
+            #left-controls { left: 10px; bottom: 75px; gap: 6px; }
+            #right-controls { right: 10px; bottom: 75px; gap: 6px; }
             .button-group { bottom: 18px; right: 12px; gap: 6px; }
             .btn-action { font-size: 11px; padding: 4px 10px; }
             #haiti-flag-corner { bottom: 8px; right: 8px; }
@@ -272,11 +286,13 @@ GAME_HTML = """
         </select>
     </div>
 
-    <!-- VIRTUAL CONTROLS -->
-    <div id="virtual-controls">
-        <div class="ctrl-btn left" id="btn-left">◀</div>
+    <!-- VIRTUAL CONTROLS – split left/right -->
+    <div id="left-controls">
         <div class="ctrl-btn up" id="btn-up">▲</div>
         <div class="ctrl-btn down" id="btn-down">▼</div>
+        <div class="ctrl-btn left" id="btn-left">◀</div>
+    </div>
+    <div id="right-controls">
         <div class="ctrl-btn right" id="btn-right">▶</div>
     </div>
 
@@ -347,9 +363,9 @@ GAME_HTML = """
         const LANE_LIMIT = 2.7;
         const FINISH_LINE_Z = 400;
         const START_LINE_Z = 0;
-        const MAX_SPEED = 45;        // faster
+        const MAX_SPEED = 45;
         const MAX_REVERSE = -8;
-        const ACCEL = 2.8;           // more acceleration
+        const ACCEL = 2.8;
         const BRAKE = 2.2;
 
         // ===== ROAD =====
@@ -738,25 +754,23 @@ GAME_HTML = """
         });
         window.addEventListener('keyup', (e) => { if (e.key.startsWith('Arrow')) keys[e.key] = false; });
 
+        // Setup virtual buttons (they are now in separate containers, but IDs are same)
         function setupVirtualButton(id, key) {
             const btn = document.getElementById(id);
             if (!btn) return;
             const start = (e) => {
                 e.preventDefault();
                 keys[key] = true;
-                initEngineSound(); // ensure audio context is active
-                // also start engine if race is running but sound not yet playing
+                initEngineSound();
                 if (raceRunning) startEngineSound();
             };
             const end = (e) => {
                 e.preventDefault();
                 keys[key] = false;
             };
-            // Mouse
             btn.addEventListener('mousedown', start);
             btn.addEventListener('mouseup', end);
             btn.addEventListener('mouseleave', end);
-            // Touch
             btn.addEventListener('touchstart', start, { passive: false });
             btn.addEventListener('touchend', end, { passive: false });
             btn.addEventListener('touchcancel', end, { passive: false });
@@ -766,14 +780,14 @@ GAME_HTML = """
         setupVirtualButton('btn-left', 'ArrowLeft');
         setupVirtualButton('btn-right', 'ArrowRight');
 
-        // Global audio init on any user interaction
+        // Global audio init
         document.addEventListener('click', () => { initEngineSound(); });
         document.addEventListener('touchstart', () => { initEngineSound(); }, { passive: true });
 
         function updateBus(dt) {
             if (!raceRunning) return;
             if (keys.ArrowUp) {
-                busSpeed += ACCEL * dt * 1.2; // extra boost when forward pressed
+                busSpeed += ACCEL * dt * 1.2;
                 if (busSpeed > MAX_SPEED) busSpeed = MAX_SPEED;
             }
             if (keys.ArrowDown) {
@@ -943,7 +957,7 @@ GAME_HTML = """
             }, duration);
         }
 
-        // ===== ENGINE SOUND (will run on mobile) =====
+        // ===== ENGINE SOUND =====
         let engineCtx = null,
             engineNodes = null,
             engineRunning = false;
