@@ -24,7 +24,7 @@ GAME_HTML = """
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Race: Haiti Bus vs World | Gesner Deslandes</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', 'Courier New', monospace; }
@@ -65,6 +65,7 @@ GAME_HTML = """
             background: #222; color: white;
             border: 1px solid orange; padding: 6px 12px; border-radius: 20px;
             cursor: pointer; font-weight: bold; font-family: monospace;
+            touch-action: manipulation;
         }
         button:hover { background: #ff6600; }
         #flag-selector {
@@ -74,12 +75,58 @@ GAME_HTML = """
             display: flex; gap: 8px; align-items: center;
         }
         select { background: #333; color: white; border: 1px solid gold; border-radius: 8px; padding: 4px 8px; }
+
+        /* VIRTUAL CONTROLS – added for mobile */
+        #virtual-controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 300;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(6px);
+            padding: 12px 24px;
+            border-radius: 60px;
+            border: 1px solid rgba(255,255,255,0.2);
+            touch-action: none;
+        }
+        .ctrl-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.4);
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            touch-action: none;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .ctrl-btn:active {
+            background: rgba(255,255,255,0.35);
+            transform: scale(0.92);
+        }
+        .ctrl-btn.up { background: rgba(0,200,80,0.3); border-color: #0f0; }
+        .ctrl-btn.down { background: rgba(200,50,50,0.3); border-color: #f44; }
+        .ctrl-btn.left, .ctrl-btn.right { background: rgba(50,130,255,0.3); border-color: #4af; }
+        #virtual-controls .spacer { width: 20px; }
+
         @media (max-width: 600px) {
             #info-panel { font-size: 8px; top: 8px; left: 8px; padding: 6px 12px; }
             .names { font-size: 8px; }
-            #speed-panel { font-size: 16px; }
+            #speed-panel { font-size: 16px; bottom: 100px; right: 10px; }
             #message-box { font-size: 12px; white-space: nowrap; bottom: 25%;}
             #flag-selector { font-size: 10px; top: 8px; right: 8px; }
+            #controls-hint { display: none; }
+            #virtual-controls { gap: 12px; padding: 10px 16px; bottom: 20px; }
+            .ctrl-btn { width: 50px; height: 50px; font-size: 22px; }
         }
     </style>
 </head>
@@ -105,6 +152,14 @@ GAME_HTML = """
             <option value="france">🇫🇷 France</option>
             <option value="brazil">🇧🇷 Brazil</option>
         </select>
+    </div>
+
+    <!-- VIRTUAL CONTROLS -->
+    <div id="virtual-controls">
+        <div class="ctrl-btn left" id="btn-left">◀</div>
+        <div class="ctrl-btn up" id="btn-up">▲</div>
+        <div class="ctrl-btn down" id="btn-down">▼</div>
+        <div class="ctrl-btn right" id="btn-right">▶</div>
     </div>
 
     <script type="importmap">
@@ -424,8 +479,8 @@ GAME_HTML = """
         let busLateral = -1.0;
         let carLateral = 1.2;
         let crashed = false;
-        let raceActive = false;      // becomes true after start button and countdown finishes
-        let raceRunning = false;     // indicates if we are actually moving (countdown done)
+        let raceActive = false;
+        let raceRunning = false;
         let winner = null;
         let countdown = 0;
         let countdownInterval = null;
@@ -464,9 +519,7 @@ GAME_HTML = """
                     countdown--;
                     document.getElementById('message-box').innerHTML = `🏁 GO! 🏁`;
                     raceRunning = true;
-                    // Start the engine sound when race actually starts
                     startEngineSound();
-                    // Brief startup rev effect
                     engineRev();
                     setTimeout(() => {
                         if (raceActive && !winner) {
@@ -480,7 +533,6 @@ GAME_HTML = """
             }, 1000);
         }
         
-        // Reset everything to pre-start state
         function fullReset() {
             stopCountdown();
             raceActive = false;
@@ -498,33 +550,23 @@ GAME_HTML = """
             carSteering = 0;
             busGroup.position.set(busLateral, 0.2, 0);
             carGroup.position.set(carLateral, 0.2, 0);
-            // remove balloons
             balloons.forEach(b => scene.remove(b.mesh));
             balloons = [];
-            // enable flag selector
             opponentSelect.disabled = false;
-            // reset message
             document.getElementById('message-box').innerHTML = "🏁 Choose opponent and press START";
-            // ensure start button visible and reset button works
             startBtn.disabled = false;
             startBtn.style.opacity = '1';
-            // reset speed display
             document.getElementById('speed-value').innerText = "0";
-            // stop engine sound
             stopEngineSound();
         }
         
-        // Start the race (called when start button clicked)
         function startRace() {
-            if (raceActive) return; // already racing or counting down
-            fullReset();           // ensure clean state
-            // disable opponent selection during race
+            if (raceActive) return;
+            fullReset();
             opponentSelect.disabled = true;
-            // start countdown and enable movement after countdown
             startCountdown();
         }
         
-        // Enhanced AI obstacle avoidance
         function updateAI(dt) {
             if (!raceRunning) return;
             const lookahead = 35;
@@ -562,13 +604,32 @@ GAME_HTML = """
             carGroup.position.y = 0.2;
         }
         
+        // --- keyboard & virtual controls integration ---
         const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
         window.addEventListener('keydown', (e) => {
             if (e.key.startsWith('Arrow')) e.preventDefault();
-            if (!raceRunning && !(e.key === 'ArrowUp' && winner)) return; // only accept input when race is running
+            if (!raceRunning && !(e.key === 'ArrowUp' && winner)) return;
             keys[e.key] = true;
         });
         window.addEventListener('keyup', (e) => { if (e.key.startsWith('Arrow')) keys[e.key] = false; });
+        
+        // Virtual buttons (touch/click)
+        function setupVirtualButton(id, key) {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+            const start = (e) => { e.preventDefault(); keys[key] = true; };
+            const end = (e) => { e.preventDefault(); keys[key] = false; };
+            btn.addEventListener('mousedown', start);
+            btn.addEventListener('mouseup', end);
+            btn.addEventListener('mouseleave', end);
+            btn.addEventListener('touchstart', start, { passive: false });
+            btn.addEventListener('touchend', end, { passive: false });
+            btn.addEventListener('touchcancel', end, { passive: false });
+        }
+        setupVirtualButton('btn-up', 'ArrowUp');
+        setupVirtualButton('btn-down', 'ArrowDown');
+        setupVirtualButton('btn-left', 'ArrowLeft');
+        setupVirtualButton('btn-right', 'ArrowRight');
         
         function updateBus(dt) {
             if (!raceRunning) return;
@@ -689,7 +750,7 @@ GAME_HTML = """
                 showMessage(`🏆 HAITI BUS WINS! 🎉🏆`, false);
                 playFinishFanfare('bus');
                 createBalloons();
-                opponentSelect.disabled = false; // allow new selection after race
+                opponentSelect.disabled = false;
                 stopEngineSound();
             } else if (carZ >= FINISH_LINE_Z && winner === null) {
                 winner = 'car';
@@ -754,13 +815,12 @@ GAME_HTML = """
         startBtn.addEventListener('click', startRace);
         resetBtn.addEventListener('click', resetRace);
         
-        // --- NEW ENGINE SOUND (classic race car) ---
+        // --- Engine Sound ---
         let engineCtx = null;
         let engineNodes = null;
-        let engineStarted = false; // whether oscillators have been started (they can be started once)
-        let engineRunning = false; // whether sound is currently audible (gains > 0)
+        let engineStarted = false;
+        let engineRunning = false;
         
-        // Initialize audio context and nodes (called once on first user interaction)
         function initEngineSound() {
             if (engineCtx) return;
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -769,12 +829,10 @@ GAME_HTML = """
             } catch(e) {
                 return;
             }
-            // Master gain
             const masterGain = engineCtx.createGain();
             masterGain.gain.value = 0.5;
             masterGain.connect(engineCtx.destination);
             
-            // Oscillator 1: sawtooth for growl
             const osc1 = engineCtx.createOscillator();
             osc1.type = 'sawtooth';
             osc1.frequency.value = 80;
@@ -783,7 +841,6 @@ GAME_HTML = """
             osc1.connect(gain1);
             gain1.connect(masterGain);
             
-            // Oscillator 2: sine for bass rumble
             const osc2 = engineCtx.createOscillator();
             osc2.type = 'sine';
             osc2.frequency.value = 45;
@@ -792,7 +849,6 @@ GAME_HTML = """
             osc2.connect(gain2);
             gain2.connect(masterGain);
             
-            // Noise (white) for road / exhaust
             const bufferSize = 4096;
             const buffer = engineCtx.createBuffer(1, bufferSize, engineCtx.sampleRate);
             const data = buffer.getChannelData(0);
@@ -809,14 +865,12 @@ GAME_HTML = """
             filter.connect(noiseGain);
             noiseGain.connect(masterGain);
             
-            // Store nodes
             engineNodes = {
                 masterGain,
                 osc1, gain1,
                 osc2, gain2,
                 noise, noiseGain, filter
             };
-            // Start oscillators (they will run continuously but with zero gain)
             osc1.start();
             osc2.start();
             noise.start();
@@ -824,24 +878,19 @@ GAME_HTML = """
             engineCtx.resume();
         }
         
-        // Start the engine sound (set gains > 0)
         function startEngineSound() {
             if (!engineNodes) initEngineSound();
             if (!engineNodes) return;
             if (engineCtx.state === 'suspended') engineCtx.resume();
             engineRunning = true;
-            // Gains will be updated via updateEngineSound based on speed
         }
         
-        // Brief startup rev effect (sweep up and down)
         function engineRev() {
             if (!engineNodes || !engineRunning) return;
             const now = engineCtx.currentTime;
-            // Sweep osc1 frequency from 80 to 200 and back
             engineNodes.osc1.frequency.setValueAtTime(80, now);
             engineNodes.osc1.frequency.linearRampToValueAtTime(250, now + 0.3);
             engineNodes.osc1.frequency.linearRampToValueAtTime(80, now + 0.6);
-            // Quick gain boost
             engineNodes.gain1.gain.setValueAtTime(0.05, now);
             engineNodes.gain1.gain.linearRampToValueAtTime(0.2, now + 0.15);
             engineNodes.gain1.gain.linearRampToValueAtTime(0.05, now + 0.6);
@@ -853,7 +902,6 @@ GAME_HTML = """
             engineNodes.noiseGain.gain.linearRampToValueAtTime(0.01, now + 0.6);
         }
         
-        // Stop the engine sound (set gains to 0)
         function stopEngineSound() {
             if (!engineNodes) return;
             engineRunning = false;
@@ -863,18 +911,13 @@ GAME_HTML = """
             engineNodes.noiseGain.gain.setValueAtTime(0, now);
         }
         
-        // Update engine parameters based on current speed
         function updateEngineSound(speed) {
             if (!engineNodes || !engineRunning) return;
             const absSpd = Math.abs(speed);
             const norm = Math.min(1, absSpd / MAX_SPEED);
-            // osc1: 80 - 350 Hz
             engineNodes.osc1.frequency.value = 80 + norm * 270;
-            // osc2: 45 - 180 Hz
             engineNodes.osc2.frequency.value = 45 + norm * 135;
-            // filter frequency for noise: 200 - 800 Hz
             engineNodes.filter.frequency.value = 200 + norm * 600;
-            // Gains: increase with speed
             const g1 = 0.02 + norm * 0.25;
             const g2 = 0.01 + norm * 0.12;
             const gNoise = 0.005 + norm * 0.08;
@@ -882,10 +925,6 @@ GAME_HTML = """
             engineNodes.gain2.gain.value = g2;
             engineNodes.noiseGain.gain.value = gNoise;
         }
-        
-        // --- End of engine sound code ---
-        
-        // We'll call updateEngineSound from the main loop instead of the old one.
         
         function updateCamera() {
             const targetX = busLateral * 0.3;
@@ -906,7 +945,6 @@ GAME_HTML = """
                 updateAI(dt);
                 checkCollisions();
                 checkFinish();
-                // Update engine sound with current bus speed
                 updateEngineSound(busSpeed);
                 speedSpan.innerText = Math.floor(Math.abs(busSpeed) * 3.6);
             }
@@ -918,13 +956,12 @@ GAME_HTML = """
             requestAnimationFrame(animate);
         }
         
-        // Initialize audio on first keypress
         window.addEventListener('keydown', () => {
             if (!engineCtx) initEngineSound();
             if (engineCtx && engineCtx.state === 'suspended') engineCtx.resume();
         });
         
-        fullReset(); // initial pre-start state
+        fullReset();
         animate();
         
         window.addEventListener('resize', () => {
