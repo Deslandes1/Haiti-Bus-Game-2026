@@ -54,6 +54,25 @@ GAME_HTML = """
         }
         #fullscreen-btn:hover { background: rgba(255,255,255,0.2); }
 
+        /* SOUND TOGGLE – top-left, next to info */
+        #sound-toggle {
+            position: absolute; top: 10px; right: 80px;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 30px;
+            color: white;
+            padding: 4px 12px;
+            font-size: 18px;
+            z-index: 500;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: 0.15s;
+            user-select: none;
+            line-height: 1.4;
+        }
+        #sound-toggle:hover { background: rgba(255,255,255,0.2); }
+
         /* HAITIAN FLAG – bottom-right corner */
         #haiti-flag-corner {
             position: absolute; bottom: 12px; right: 12px;
@@ -194,7 +213,6 @@ GAME_HTML = """
             flex-direction: column;
             align-items: center;
         }
-        /* D-pad style: left and right controls are a 3-button column */
         .ctrl-btn {
             width: 52px;
             height: 52px;
@@ -222,12 +240,10 @@ GAME_HTML = """
         .ctrl-btn.left { background: rgba(50,130,255,0.2); border-color: rgba(68,170,255,0.3); }
         .ctrl-btn.right { background: rgba(50,130,255,0.2); border-color: rgba(68,170,255,0.3); }
 
-        /* arrange left group: up, down, left – left is at bottom of column */
         #left-controls .ctrl-btn.up { order: 1; }
         #left-controls .ctrl-btn.down { order: 2; }
         #left-controls .ctrl-btn.left { order: 3; }
 
-        /* right group just has right button */
         #right-controls .ctrl-btn.right { order: 1; }
 
         @media (max-width: 600px) {
@@ -236,6 +252,7 @@ GAME_HTML = """
             #speed-panel { font-size: 11px; bottom: 55px; right: 6px; padding: 2px 8px; }
             #message-box { font-size: 11px; bottom: 28%; padding: 4px 10px; white-space: nowrap; }
             #flag-selector { font-size: 8px; top: 6px; right: 60px; padding: 2px 6px; }
+            #sound-toggle { font-size: 14px; right: 60px; top: 6px; padding: 2px 10px; }
             .ctrl-btn { width: 44px; height: 44px; font-size: 18px; }
             #left-controls { left: 10px; bottom: 75px; gap: 6px; }
             #right-controls { right: 10px; bottom: 75px; gap: 6px; }
@@ -250,14 +267,17 @@ GAME_HTML = """
 </head>
 <body>
 
-    <!-- HAITIAN FLAG – bottom-right corner -->
+    <!-- HAITIAN FLAG -->
     <div id="haiti-flag-corner">
         <div class="flag-small"></div>
         <span class="label">HAITI</span>
     </div>
 
-    <!-- FULL SCREEN BUTTON -->
+    <!-- FULL SCREEN -->
     <button id="fullscreen-btn">⛶ FULL</button>
+
+    <!-- SOUND TOGGLE -->
+    <button id="sound-toggle">🔊</button>
 
     <!-- INFO PANEL -->
     <div id="info-panel">
@@ -270,13 +290,13 @@ GAME_HTML = """
     <!-- MESSAGE -->
     <div id="message-box">🏁 Choose opponent and press START</div>
 
-    <!-- START / RESET buttons -->
+    <!-- START / RESET -->
     <div class="button-group">
         <button class="btn-action" id="startBtn">🚦 START</button>
         <button class="btn-action" id="resetBtn">🔄 RESET</button>
     </div>
 
-    <!-- OPPONENT FLAG SELECTOR -->
+    <!-- OPPONENT -->
     <div id="flag-selector">
         🏁 <select id="opponentFlag">
             <option value="dominican">🇩🇴 Dominican</option>
@@ -286,7 +306,7 @@ GAME_HTML = """
         </select>
     </div>
 
-    <!-- VIRTUAL CONTROLS – split left/right -->
+    <!-- VIRTUAL CONTROLS (split) -->
     <div id="left-controls">
         <div class="ctrl-btn up" id="btn-up">▲</div>
         <div class="ctrl-btn down" id="btn-down">▼</div>
@@ -324,6 +344,17 @@ GAME_HTML = """
             fullscreenBtn.textContent = document.fullscreenElement ? '⛶ EXIT' : '⛶ FULL';
         });
 
+        // ===== SOUND TOGGLE =====
+        const soundToggle = document.getElementById('sound-toggle');
+        let soundEnabled = true;
+
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+            if (!soundEnabled) stopEngineSound();
+            else if (raceRunning) startEngineSound();
+        });
+
         // ===== SCENE SETUP =====
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0a1030);
@@ -358,7 +389,7 @@ GAME_HTML = """
         fillLight.position.set(0, 5, 0);
         scene.add(fillLight);
 
-        // ===== RACE CONSTANTS (faster) =====
+        // ===== RACE CONSTANTS =====
         const ROAD_WIDTH = 6.0;
         const LANE_LIMIT = 2.7;
         const FINISH_LINE_Z = 400;
@@ -745,7 +776,7 @@ GAME_HTML = """
             carGroup.position.y = 0.2;
         }
 
-        // ===== KEYBOARD & VIRTUAL CONTROLS with multi-touch support =====
+        // ===== KEYBOARD & VIRTUAL CONTROLS =====
         const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
         window.addEventListener('keydown', (e) => {
             if (e.key.startsWith('Arrow')) e.preventDefault();
@@ -754,7 +785,6 @@ GAME_HTML = """
         });
         window.addEventListener('keyup', (e) => { if (e.key.startsWith('Arrow')) keys[e.key] = false; });
 
-        // Setup virtual buttons (they are now in separate containers, but IDs are same)
         function setupVirtualButton(id, key) {
             const btn = document.getElementById(id);
             if (!btn) return;
@@ -780,7 +810,6 @@ GAME_HTML = """
         setupVirtualButton('btn-left', 'ArrowLeft');
         setupVirtualButton('btn-right', 'ArrowRight');
 
-        // Global audio init
         document.addEventListener('click', () => { initEngineSound(); });
         document.addEventListener('touchstart', () => { initEngineSound(); }, { passive: true });
 
@@ -957,7 +986,7 @@ GAME_HTML = """
             }, duration);
         }
 
-        // ===== ENGINE SOUND =====
+        // ===== ENGINE SOUND with toggle support =====
         let engineCtx = null,
             engineNodes = null,
             engineRunning = false;
@@ -1011,13 +1040,13 @@ GAME_HTML = """
 
         function startEngineSound() {
             if (!engineNodes) initEngineSound();
-            if (!engineNodes) return;
+            if (!engineNodes || !soundEnabled) return;
             if (engineCtx.state === 'suspended') engineCtx.resume();
             engineRunning = true;
         }
 
         function engineRev() {
-            if (!engineNodes || !engineRunning) return;
+            if (!engineNodes || !engineRunning || !soundEnabled) return;
             const now = engineCtx.currentTime;
             engineNodes.osc1.frequency.setValueAtTime(80, now);
             engineNodes.osc1.frequency.linearRampToValueAtTime(250, now + 0.3);
@@ -1043,7 +1072,7 @@ GAME_HTML = """
         }
 
         function updateEngineSound(speed) {
-            if (!engineNodes || !engineRunning) return;
+            if (!engineNodes || !engineRunning || !soundEnabled) return;
             const absSpd = Math.abs(speed);
             const norm = Math.min(1, absSpd / MAX_SPEED);
             engineNodes.osc1.frequency.value = 80 + norm * 270;
