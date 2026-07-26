@@ -8,7 +8,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Hide Streamlit footer + "Manage app" link, replace with nothing (we'll add flag in HTML)
 st.markdown(
     """
     <style>
@@ -16,7 +15,6 @@ st.markdown(
         .stAppFooter, .stAppFooter * {display: none !important;}
         .block-container {padding: 0 !important; margin: 0 !important; max-width: 100% !important;}
         iframe {height: 100vh !important; width: 100% !important; border: none !important;}
-        /* Hide the "Manage app" link completely */
         .stAppFooter {display: none !important;}
         .css-1vq4p4l {display: none !important;}
         .stDeployButton {display: none !important;}
@@ -56,7 +54,7 @@ GAME_HTML = """
         }
         #fullscreen-btn:hover { background: rgba(255,255,255,0.2); }
 
-        /* HAITIAN FLAG – bottom-right corner (replaces "Manage app") */
+        /* HAITIAN FLAG – bottom-right corner */
         #haiti-flag-corner {
             position: absolute; bottom: 12px; right: 12px;
             z-index: 400;
@@ -177,7 +175,7 @@ GAME_HTML = """
             font-size: 10px;
         }
 
-        /* VIRTUAL CONTROLS – moved UP above START/RESET */
+        /* VIRTUAL CONTROLS – positioned ABOVE START/RESET */
         #virtual-controls {
             position: fixed;
             bottom: 95px;
@@ -209,6 +207,7 @@ GAME_HTML = """
             touch-action: none;
             cursor: pointer;
             transition: 0.08s;
+            -webkit-tap-highlight-color: transparent;
         }
         .ctrl-btn:active {
             background: rgba(255,255,255,0.25);
@@ -237,7 +236,7 @@ GAME_HTML = """
 </head>
 <body>
 
-    <!-- HAITIAN FLAG – bottom-right corner (replaces "Manage app") -->
+    <!-- HAITIAN FLAG – bottom-right corner -->
     <div id="haiti-flag-corner">
         <div class="flag-small"></div>
         <span class="label">HAITI</span>
@@ -246,7 +245,7 @@ GAME_HTML = """
     <!-- FULL SCREEN BUTTON -->
     <button id="fullscreen-btn">⛶ FULL</button>
 
-    <!-- INFO PANEL – subtle -->
+    <!-- INFO PANEL -->
     <div id="info-panel">
         <div class="names">🚌 <span>Gesner Deslandes</span> · Gesner Jr · Roosevelt · Sebastien · Zendaya</div>
     </div>
@@ -273,7 +272,7 @@ GAME_HTML = """
         </select>
     </div>
 
-    <!-- VIRTUAL CONTROLS – positioned ABOVE START/RESET -->
+    <!-- VIRTUAL CONTROLS -->
     <div id="virtual-controls">
         <div class="ctrl-btn left" id="btn-left">◀</div>
         <div class="ctrl-btn up" id="btn-up">▲</div>
@@ -343,15 +342,15 @@ GAME_HTML = """
         fillLight.position.set(0, 5, 0);
         scene.add(fillLight);
 
-        // ===== RACE CONSTANTS =====
+        // ===== RACE CONSTANTS (faster) =====
         const ROAD_WIDTH = 6.0;
         const LANE_LIMIT = 2.7;
         const FINISH_LINE_Z = 400;
         const START_LINE_Z = 0;
-        const MAX_SPEED = 32;
-        const MAX_REVERSE = -6;
-        const ACCEL = 1.2;
-        const BRAKE = 1.6;
+        const MAX_SPEED = 45;        // faster
+        const MAX_REVERSE = -8;
+        const ACCEL = 2.8;           // more acceleration
+        const BRAKE = 2.2;
 
         // ===== ROAD =====
         const roadLength = FINISH_LINE_Z + 60;
@@ -730,7 +729,7 @@ GAME_HTML = """
             carGroup.position.y = 0.2;
         }
 
-        // ===== KEYBOARD & VIRTUAL CONTROLS =====
+        // ===== KEYBOARD & VIRTUAL CONTROLS with multi-touch support =====
         const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
         window.addEventListener('keydown', (e) => {
             if (e.key.startsWith('Arrow')) e.preventDefault();
@@ -742,14 +741,22 @@ GAME_HTML = """
         function setupVirtualButton(id, key) {
             const btn = document.getElementById(id);
             if (!btn) return;
-            const start = (e) => { e.preventDefault();
+            const start = (e) => {
+                e.preventDefault();
                 keys[key] = true;
-                initEngineSound(); };
-            const end = (e) => { e.preventDefault();
-                keys[key] = false; };
+                initEngineSound(); // ensure audio context is active
+                // also start engine if race is running but sound not yet playing
+                if (raceRunning) startEngineSound();
+            };
+            const end = (e) => {
+                e.preventDefault();
+                keys[key] = false;
+            };
+            // Mouse
             btn.addEventListener('mousedown', start);
             btn.addEventListener('mouseup', end);
             btn.addEventListener('mouseleave', end);
+            // Touch
             btn.addEventListener('touchstart', start, { passive: false });
             btn.addEventListener('touchend', end, { passive: false });
             btn.addEventListener('touchcancel', end, { passive: false });
@@ -766,11 +773,11 @@ GAME_HTML = """
         function updateBus(dt) {
             if (!raceRunning) return;
             if (keys.ArrowUp) {
-                busSpeed += ACCEL * dt;
+                busSpeed += ACCEL * dt * 1.2; // extra boost when forward pressed
                 if (busSpeed > MAX_SPEED) busSpeed = MAX_SPEED;
             }
             if (keys.ArrowDown) {
-                if (busSpeed > 0) busSpeed -= BRAKE * dt;
+                if (busSpeed > 0) busSpeed -= BRAKE * dt * 1.5;
                 else busSpeed -= ACCEL * 0.9 * dt;
                 if (busSpeed < MAX_REVERSE) busSpeed = MAX_REVERSE;
             }
@@ -779,9 +786,9 @@ GAME_HTML = """
                 if (Math.abs(busSpeed) < 0.2) busSpeed = 0;
             }
             let turn = 0;
-            if (keys.ArrowLeft) turn = -5.5;
-            if (keys.ArrowRight) turn = 5.5;
-            busLateral += turn * dt * (Math.abs(busSpeed) * 0.1 + 0.7);
+            if (keys.ArrowLeft) turn = -6.0;
+            if (keys.ArrowRight) turn = 6.0;
+            busLateral += turn * dt * (Math.abs(busSpeed) * 0.1 + 0.8);
             busLateral = Math.max(-LANE_LIMIT, Math.min(LANE_LIMIT, busLateral));
             busGroup.position.x = busLateral;
             busZ += busSpeed * dt;
@@ -936,7 +943,7 @@ GAME_HTML = """
             }, duration);
         }
 
-        // ===== ENGINE SOUND =====
+        // ===== ENGINE SOUND (will run on mobile) =====
         let engineCtx = null,
             engineNodes = null,
             engineRunning = false;
